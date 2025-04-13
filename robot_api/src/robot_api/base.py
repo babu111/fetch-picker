@@ -1,8 +1,8 @@
 #! /usr/bin/env python
 
-# TODO: import ????????_msgs.msg
+# import ????????_msgs.msg
 import rospy
-
+from geometry_msgs.msg import Twist
 
 class Base(object):
     """Base controls the mobile base portion of the Fetch robot.
@@ -15,7 +15,8 @@ class Base(object):
     """
 
     def __init__(self):
-        # TODO: Create publisher
+        # Create publisher
+        self._pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
         pass
 
     def move(self, linear_speed, angular_speed):
@@ -30,13 +31,17 @@ class Base(object):
             angular_speed: The rotation speed, in radians/second. A positive
                 value means the robot should rotate clockwise.
         """
-        # TODO: Create Twist msg
-        # TODO: Fill out msg
-        # TODO: Publish msg
-        rospy.logerr('Not implemented.')
+        # Create Twist msg
+        # Fill out msg
+        # Publish msg
+        msg = Twist()
+        msg.linear.x = linear_speed
+        msg.angular.z = angular_speed
+        self._pub.publish(msg)  
 
     def stop(self):
         """Stops the mobile base from moving.
         """
-        # TODO: Publish 0 velocity
-        rospy.logerr('Not implemented.')
+        # Publish 0 velocity
+        msg = Twist()  # All fields are zero by default
+        self._pub.publish(msg)

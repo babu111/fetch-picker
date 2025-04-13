@@ -1,3 +1,11 @@
 *.pyc
 *~
 cmake*/
+fetch-picker/ar_track_alvar
+fetch-picker/collada_web_server
+fetch-picker/course_setup
+fetch-picker/fetch_gazebo
+fetch-picker/gizmo_description
+fetch-picker/madmux
+fetch-picker/simple_grasping
+fetch-picker/uw_cse

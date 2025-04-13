@@ -1,11 +1,12 @@
 #! /usr/bin/env python
 
 import rospy
+import robot_api
 
 
 def print_usage():
-    print 'Moves the torso to a certain height between [0.0, 0.4]'
-    print 'Usage: rosrun applications torso_demo.py 0.4'
+    print('Moves the torso to a certain height between [0.0, 0.4]')
+    print('Usage: rosrun applications torso_demo.py 0.4')
 
 
 def wait_for_time():
@@ -23,6 +24,9 @@ def main():
         print_usage()
         return
     height = float(argv[1])
+    torso = robot_api.Torso()
+    torso.set_height(height)
+    print('Set torso height to %.2f' % height)
 
 
 if __name__ == '__main__':

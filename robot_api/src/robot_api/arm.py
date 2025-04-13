@@ -1,6 +1,6 @@
-# TODO: import ?????????
-# TODO: import ???????_msgs.msg
-# TODO: import ??????????_msgs.msg
+import actionlib
+from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
+from control_msgs.msg import FollowJointTrajectoryAction, FollowJointTrajectoryGoal
 import rospy
 
 from .arm_joints import ArmJoints
@@ -17,9 +17,16 @@ class Arm(object):
     """
 
     def __init__(self):
-        # TODO: Create actionlib client
-        # TODO: Wait for server
-        pass
+        # Create actionlib client
+        # Wait for server
+        self.client = actionlib.SimpleActionClient(
+            '/arm_controller/follow_joint_trajectory',
+            FollowJointTrajectoryAction
+        )
+        rospy.loginfo('Waiting for arm controller...')
+        self.client.wait_for_server()
+        rospy.loginfo('...connected to arm controller!')
+
 
     def move_to_joints(self, arm_joints):
         """Moves the robot's arm to the given joints.
@@ -28,14 +35,28 @@ class Arm(object):
             arm_joints: An ArmJoints object that specifies the joint values for
                 the arm.
         """
-        # TODO: Create a trajectory point
-        # TODO: Set position of trajectory point
-        # TODO: Set time of trajectory point
+        # Create a trajectory point
+        # Set position of trajectory point
+        # Set time of trajectory point
 
-        # TODO: Create goal
-        # TODO: Add joint name to list
-        # TODO: Add the trajectory point created above to trajectory
+        # Create goal
+        # Add joint name to list
+        # Add the trajectory point created above to trajectory
 
-        # TODO: Send goal
-        # TODO: Wait for result
-        rospy.logerr('Not implemented.')
+        # Send goal
+        # Wait for result
+        point = JointTrajectoryPoint()
+        point.positions = arm_joints.values()
+        point.time_from_start = rospy.Duration(5.0)  # 5 seconds
+
+        # Create goal
+        goal = FollowJointTrajectoryGoal()
+        goal.trajectory.joint_names = ArmJoints.names()
+        goal.trajectory.points.append(point)
+
+        # Required header stamp
+        goal.trajectory.header.stamp = rospy.Time.now() + rospy.Duration(0.1)
+
+        # Send goal
+        self.client.send_goal(goal)
+        self.client.wait_for_result()
