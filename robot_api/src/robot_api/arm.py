@@ -39,17 +39,13 @@ class Arm(object):
         # Set position of trajectory point
         # Set time of trajectory point
 
-        # Create goal
-        # Add joint name to list
-        # Add the trajectory point created above to trajectory
-
-        # Send goal
-        # Wait for result
         point = JointTrajectoryPoint()
         point.positions = arm_joints.values()
         point.time_from_start = rospy.Duration(5.0)  # 5 seconds
 
         # Create goal
+        # Add joint name to list
+        # Add the trajectory point created above to trajectory
         goal = FollowJointTrajectoryGoal()
         goal.trajectory.joint_names = ArmJoints.names()
         goal.trajectory.points.append(point)
