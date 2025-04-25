@@ -1,0 +1,12 @@
+<launch>
+  <!-- Argument for specifying the map file -->
+  <arg name="map_file" default="/fetch_ws/src/fetch-picker/maps/maps.yaml" />
+
+  <!-- Include the main fetch navigation launch file and pass in the map_file argument -->
+  <include file="$(find fetch_navigation)/launch/fetch_nav.launch">
+    <arg name="map_file" value="$(arg map_file)" />
+  </include>
+
+  <!-- Launch RViz with your custom navigation configuration -->
+  <node pkg="rviz" type="rviz" name="$(anon rviz)" args="-d /fetch_ws/src/fetch-picker/rviz_config/navigation_rviz.rviz" />
+</launch>

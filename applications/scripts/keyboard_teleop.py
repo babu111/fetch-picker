@@ -43,7 +43,7 @@ def getKey():
     return key
 
 
-speed = .2
+speed = .8
 turn = 1
 
 
@@ -100,9 +100,9 @@ if __name__ == "__main__":
             target_turn = turn * th
 
             if target_speed > control_speed:
-                control_speed = min(target_speed, control_speed + 0.02)
+                control_speed = min(target_speed, control_speed + 0.1)
             elif target_speed < control_speed:
-                control_speed = max(target_speed, control_speed - 0.02)
+                control_speed = max(target_speed, control_speed - 0.1)
             else:
                 control_speed = target_speed
 
