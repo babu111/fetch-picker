@@ -16,7 +16,7 @@ lab25.sh
 ```
 
 
-### lab 26
+### Lab 26
 Lab 26 may be a bit difficult to implement. The code is in
 
 ```
