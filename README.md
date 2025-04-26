@@ -22,7 +22,7 @@ Lab 26 may be a bit difficult to implement. The code is in
 ```
 applications/scripts/lab26_teleop.py
 ```
-After configuring the correct environment for IKFast, applications, etc, you will be able to run the teleop code with the following command. Start each command in a new terminal.
+After configuring the correct environment in the previous lab for IKFast, applications, etc, you will be able to run the teleop code with the following command. Start each command in a new terminal.
 ```
 roscore
 ```
