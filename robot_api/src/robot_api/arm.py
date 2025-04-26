@@ -141,12 +141,16 @@ class Arm(object):
                allowed_planning_time=10.0,
                group_name='arm',
                tolerance=0.01):
-        return self.move_to_pose(
+        error = self.move_to_pose(
             pose_stamped,
             allowed_planning_time=allowed_planning_time,
             group_name=group_name,
             tolerance=tolerance,
             plan_only=True)
+        
+        if error is not None:
+            return False
+        return True
 
     def cancel_all_goals(self):
         self.client.cancel_all_goals() # Your action client from Lab 7

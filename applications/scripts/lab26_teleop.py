@@ -119,9 +119,9 @@ class GripperTeleop(object):
         im.scale = 0.25
 
         # Initial pose
-        im.pose.position.x = -0.166
+        im.pose.position.x = 0.5
         im.pose.position.y = 0
-        im.pose.position.z = 0
+        im.pose.position.z = 0.5
         im.pose.orientation.w = 1
 
         # Add gripper visual mesh
@@ -163,7 +163,7 @@ class GripperTeleop(object):
                 rospy.loginfo("Close gripper requested.")
                 self._gripper.close()
 
-        elif feedback.event_type == feedback.POSE_UPDATE:
+        elif feedback.event_type == feedback.MOUSE_UP:
             rospy.loginfo("Pose updated, checking IK...")
             pose = PoseStamped()
             pose.header.frame_id = 'base_link'
@@ -173,7 +173,7 @@ class GripperTeleop(object):
             self.update_color(reachable)
 
     def update_color(self, reachable):
-        gripper_marker = self.make_gripper_marker()
+        gripper_marker = self._im_server.get(self._current_marker_name)
         for m in gripper_marker.controls[0].markers:
             if reachable:
                 m.color.r, m.color.g, m.color.b = 0.0, 1.0, 0.0  # green
@@ -181,6 +181,7 @@ class GripperTeleop(object):
                 m.color.r, m.color.g, m.color.b = 1.0, 0.0, 0.0  # red
             m.color.a = 1.0
         self._im_server.insert(gripper_marker, feedback_cb=self.handle_feedback)
+        self._menu_handler.apply(self._im_server, self._current_marker_name)
         self._im_server.applyChanges()
 
 class AutoPickTeleop(object):
@@ -188,11 +189,17 @@ class AutoPickTeleop(object):
         self._arm = arm
         self._gripper = gripper
         self._im_server = im_server
+        self._menu_handler = MenuHandler()
         self._current_marker_name = 'target_marker'
 
     def start(self):
         obj_marker = self.make_target_marker()
         self._im_server.insert(obj_marker, feedback_cb=self.handle_feedback)
+
+        self._menu_handler.insert('Pick Object', callback=self.handle_feedback)
+        self._menu_handler.insert('Open Gripper', callback=self.handle_feedback)
+        self._menu_handler.apply(self._im_server, self._current_marker_name)
+        
         self._im_server.applyChanges()
 
     def make_target_marker(self):
@@ -217,6 +224,7 @@ class AutoPickTeleop(object):
         box.color.g = 0.0
         box.color.b = 1.0
         box.color.a = 1.0
+        box.pose.position.x = 0.18
         control.markers.append(box)
         control.markers.extend(make_gripper_visualization())
 
@@ -229,8 +237,51 @@ class AutoPickTeleop(object):
         return im
 
     def handle_feedback(self, feedback):
-        if feedback.event_type == feedback.POSE_UPDATE:
-            rospy.loginfo("Object moved! Update pre-grasp, grasp, lift poses here.")
+        if feedback.event_type == feedback.MENU_SELECT:
+            if feedback.menu_entry_id == 1:
+                rospy.loginfo("Pick Object requested.")
+
+                # Get latest pose of the target marker
+                marker = self._im_server.get(self._current_marker_name)
+                target_pose = marker.pose
+
+                # Plan a simple "pre-grasp" offset pose
+                pre_grasp_pose = PoseStamped()
+                pre_grasp_pose.header.frame_id = 'base_link'
+                pre_grasp_pose.pose = copy.deepcopy(target_pose)
+                # pre_grasp_pose.pose.position.x -= 0.1  # offset back along x by 10cm
+
+                # Move to pre-grasp pose
+                self._arm.move_to_pose(pre_grasp_pose)
+                rospy.sleep(0.3)
+                self._gripper.close()
+
+            elif feedback.menu_entry_id == 2:
+                rospy.loginfo("Open Gripper requested.")
+                self._gripper.open()
+
+        elif feedback.event_type == feedback.MOUSE_UP:
+            rospy.loginfo("Pose updated, checking IK...")
+            pose = PoseStamped()
+            pose.header.frame_id = 'base_link'
+            pose.pose = feedback.pose
+            reachable = self._arm.check_pose(pose)
+            print("Pose reachable:", reachable)
+            self.update_color(reachable)
+
+    def update_color(self, reachable):
+        gripper_marker = self._im_server.get(self._current_marker_name)
+        for m in gripper_marker.controls[0].markers:
+            if m.type == Marker.CUBE:
+                continue
+            if reachable:
+                m.color.r, m.color.g, m.color.b = 0.0, 1.0, 0.0  # green
+            else:
+                m.color.r, m.color.g, m.color.b = 1.0, 0.0, 0.0  # red
+            m.color.a = 1.0
+        self._im_server.insert(gripper_marker, feedback_cb=self.handle_feedback)
+        self._menu_handler.apply(self._im_server, self._current_marker_name)
+        self._im_server.applyChanges()
 
 def main():
     rospy.init_node('lab26_teleop')
