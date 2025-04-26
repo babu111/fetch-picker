@@ -22,3 +22,19 @@ Lab 26 may be a bit difficult to implement. The code is in
 ```
 applications/scripts/lab26_teleop.py
 ```
+After configuring the correct environment for IKFast, applications, etc, you will be able to run the teleop code with the following command. Start each command in a new terminal.
+```
+roscore
+```
+```
+roslaunch fetch_gazebo playground.launch
+```
+```
+roslaunch robot_api move_group.launch
+```
+```
+rosrun rviz rviz -d rviz_config/lab26.rviz
+```
+```
+rosrun applications lab26_teleop.py
+```
