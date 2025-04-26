@@ -5,9 +5,11 @@ import copy
 import tf.transformations as tft
 from visualization_msgs.msg import InteractiveMarker, InteractiveMarkerControl, Marker, MenuEntry
 from interactive_markers.interactive_marker_server import InteractiveMarkerServer
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, Quaternion
+from interactive_markers.menu_handler import MenuHandler
 import moveit_commander
 import moveit_msgs.msg
+import numpy as np
 
 import robot_api  # Assuming you have your arm and gripper wrapper classes from previous labs
 
@@ -15,17 +17,98 @@ GRIPPER_MESH = 'package://fetch_description/meshes/gripper_link.dae'
 L_FINGER_MESH = 'package://fetch_description/meshes/l_gripper_finger_link.STL'
 R_FINGER_MESH = 'package://fetch_description/meshes/r_gripper_finger_link.STL'
 
+
+def make_6dof_controls():
+    controls = []
+    axis = ['x', 'y', 'z']
+    for ax in axis:
+        control_move = InteractiveMarkerControl()
+        control_move.name = f"move_{ax}"
+        control_move.interaction_mode = InteractiveMarkerControl.MOVE_AXIS
+        control_move.orientation = axis_to_quaternion(ax)
+        control_move.always_visible = True
+        controls.append(control_move)
+
+        control_rotate = InteractiveMarkerControl()
+        control_rotate.name = f"rotate_{ax}"
+        control_rotate.interaction_mode = InteractiveMarkerControl.ROTATE_AXIS
+        control_rotate.orientation = axis_to_quaternion(ax)
+        control_rotate.always_visible = True
+        controls.append(control_rotate)
+    return controls
+
+def axis_to_quaternion(axis):
+    if axis == 'x':
+        q = tft.quaternion_about_axis(np.pi/2, (1, 0, 0))
+    elif axis == 'y':
+        q = tft.quaternion_about_axis(np.pi/2, (0, 1, 0))
+    elif axis == 'z':
+        q = tft.quaternion_about_axis(np.pi/2, (0, 0, 1))
+    else:
+        q = [0, 0, 0, 1]
+    quat = Quaternion()
+    quat.x, quat.y, quat.z, quat.w = q
+    return quat
+
+def make_gripper_visualization():
+    markers = []
+
+    offset_x = 0.166
+
+    gripper_marker = Marker()
+    gripper_marker.type = Marker.MESH_RESOURCE
+    gripper_marker.mesh_resource = GRIPPER_MESH
+    gripper_marker.scale.x = gripper_marker.scale.y = gripper_marker.scale.z = 1.0
+    gripper_marker.color.r = 0.0
+    gripper_marker.color.g = 1.0
+    gripper_marker.color.b = 0.0
+    gripper_marker.color.a = 1.0
+    gripper_marker.pose.position.x = offset_x
+    markers.append(gripper_marker)
+
+    left_finger = Marker()
+    left_finger.type = Marker.MESH_RESOURCE
+    left_finger.mesh_resource = L_FINGER_MESH
+    left_finger.scale.x = left_finger.scale.y = left_finger.scale.z = 1.0
+    left_finger.color.r = 0.0
+    left_finger.color.g = 1.0
+    left_finger.color.b = 0.0
+    left_finger.color.a = 1.0
+    left_finger.pose.position.x = offset_x
+    left_finger.pose.position.y = -0.06  # small offset
+    markers.append(left_finger)
+
+    right_finger = Marker()
+    right_finger.type = Marker.MESH_RESOURCE
+    right_finger.mesh_resource = R_FINGER_MESH
+    right_finger.scale.x = right_finger.scale.y = right_finger.scale.z = 1.0
+    right_finger.color.r = 0.0
+    right_finger.color.g = 1.0
+    right_finger.color.b = 0.0
+    right_finger.color.a = 1.0
+    right_finger.pose.position.x = offset_x
+    right_finger.pose.position.y = 0.06  # small offset
+    markers.append(right_finger)
+
+    return markers
+
+
 class GripperTeleop(object):
     def __init__(self, arm, gripper, im_server):
         self._arm = arm
         self._gripper = gripper
         self._im_server = im_server
-        self._menu_handler = {}
+        self._menu_handler = MenuHandler()
         self._current_marker_name = 'gripper_marker'
 
     def start(self):
         gripper_marker = self.make_gripper_marker()
         self._im_server.insert(gripper_marker, feedback_cb=self.handle_feedback)
+        # Add menu entries
+        self._menu_handler.insert('Go to Pose', callback=self.handle_feedback)
+        self._menu_handler.insert('Open Gripper', callback=self.handle_feedback)
+        self._menu_handler.insert('Close Gripper', callback=self.handle_feedback)
+        self._menu_handler.apply(self._im_server, self._current_marker_name)
         self._im_server.applyChanges()
 
     def make_gripper_marker(self):
@@ -36,102 +119,42 @@ class GripperTeleop(object):
         im.scale = 0.25
 
         # Initial pose
-        im.pose.position.x = 0.5
+        im.pose.position.x = -0.166
         im.pose.position.y = 0
-        im.pose.position.z = 0.5
+        im.pose.position.z = 0
         im.pose.orientation.w = 1
 
         # Add gripper visual mesh
         control = InteractiveMarkerControl()
         control.always_visible = True
         control.interaction_mode = InteractiveMarkerControl.MENU
-        control.markers.extend(self.make_gripper_visualization())
+        control.markers.extend(make_gripper_visualization())
 
         im.controls.append(control)
 
-        # Add 6DOF controls
-        controls = self.make_6dof_controls()
-        im.controls.extend(controls)
+        # visual_control = InteractiveMarkerControl()
+        # visual_control.always_visible = True
+        # visual_control.interaction_mode = InteractiveMarkerControl.NONE
+        # visual_control.markers.extend(make_gripper_visualization())
+        # im.controls.append(visual_control)
 
-        # Add menu entries
-        self._menu_handler = {
-            1: 'Go to Pose',
-            2: 'Open Gripper',
-            3: 'Close Gripper'
-        }
-        
+        # Add 6DOF controls
+        controls = make_6dof_controls()
+        im.controls.extend(controls)
+ 
         return im
 
-    def make_gripper_visualization(self):
-        markers = []
-        gripper_marker = Marker()
-        gripper_marker.type = Marker.MESH_RESOURCE
-        gripper_marker.mesh_resource = GRIPPER_MESH
-        gripper_marker.scale.x = gripper_marker.scale.y = gripper_marker.scale.z = 1.0
-        gripper_marker.color.r = 0.0
-        gripper_marker.color.g = 1.0
-        gripper_marker.color.b = 0.0
-        gripper_marker.color.a = 1.0
-        markers.append(gripper_marker)
-
-        left_finger = Marker()
-        left_finger.type = Marker.MESH_RESOURCE
-        left_finger.mesh_resource = L_FINGER_MESH
-        left_finger.scale.x = left_finger.scale.y = left_finger.scale.z = 1.0
-        left_finger.color.r = 0.0
-        left_finger.color.g = 1.0
-        left_finger.color.b = 0.0
-        left_finger.color.a = 1.0
-        left_finger.pose.position.y = 0.09  # small offset
-        markers.append(left_finger)
-
-        right_finger = Marker()
-        right_finger.type = Marker.MESH_RESOURCE
-        right_finger.mesh_resource = R_FINGER_MESH
-        right_finger.scale.x = right_finger.scale.y = right_finger.scale.z = 1.0
-        right_finger.color.r = 0.0
-        right_finger.color.g = 1.0
-        right_finger.color.b = 0.0
-        right_finger.color.a = 1.0
-        right_finger.pose.position.y = -0.09  # small offset
-        markers.append(right_finger)
-
-        return markers
-
-    def make_6dof_controls(self):
-        controls = []
-        axis = ['x', 'y', 'z']
-        for ax in axis:
-            control_move = InteractiveMarkerControl()
-            control_move.name = f"move_{ax}"
-            control_move.interaction_mode = getattr(InteractiveMarkerControl, f"MOVE_AXIS")
-            control_move.orientation = self.axis_to_quaternion(ax)
-            controls.append(copy.deepcopy(control_move))
-
-            control_rotate = InteractiveMarkerControl()
-            control_rotate.name = f"rotate_{ax}"
-            control_rotate.interaction_mode = getattr(InteractiveMarkerControl, f"ROTATE_AXIS")
-            control_rotate.orientation = self.axis_to_quaternion(ax)
-            controls.append(copy.deepcopy(control_rotate))
-        return controls
-
-    def axis_to_quaternion(self, axis):
-        q = {
-            'x': (1, 0, 0, 1),
-            'y': (0, 1, 0, 1),
-            'z': (0, 0, 1, 1)
-        }
-        quat = Marker()
-        quat.orientation.x, quat.orientation.y, quat.orientation.z, quat.orientation.w = q[axis]
-        return quat.orientation
-
     def handle_feedback(self, feedback):
+        # print(feedback)
         if feedback.event_type == feedback.MENU_SELECT:
             if feedback.menu_entry_id == 1:
                 rospy.loginfo("Go to pose requested.")
+                marker = self._im_server.get(self._current_marker_name)
+                current_pose = marker.pose
+                # rospy.loginfo("Moving to pose:", current_pose)
                 pose = PoseStamped()
                 pose.header.frame_id = 'base_link'
-                pose.pose = feedback.pose
+                pose.pose = current_pose
                 self._arm.move_to_pose(pose)
             elif feedback.menu_entry_id == 2:
                 rospy.loginfo("Open gripper requested.")
@@ -145,7 +168,8 @@ class GripperTeleop(object):
             pose = PoseStamped()
             pose.header.frame_id = 'base_link'
             pose.pose = feedback.pose
-            reachable = self._arm.check_pose_reachable(pose)
+            reachable = self._arm.check_pose(pose)
+            print("Pose reachable:", reachable)
             self.update_color(reachable)
 
     def update_color(self, reachable):
@@ -194,11 +218,12 @@ class AutoPickTeleop(object):
         box.color.b = 1.0
         box.color.a = 1.0
         control.markers.append(box)
+        control.markers.extend(make_gripper_visualization())
 
         im.controls.append(control)
 
         # Add 6DOF controls
-        controls = GripperTeleop.make_6dof_controls(self)
+        controls = make_6dof_controls()
         im.controls.extend(controls)
 
         return im

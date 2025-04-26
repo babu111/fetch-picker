@@ -15,3 +15,8 @@ cd $ZEYI_PATH/robot_api
 roscp fetch_moveit_config move_group.launch launch
 roscp fetch_moveit_config planning_context.launch launch
 roscp fetch_moveit_config kinematics.yaml config
+
+
+
+# GIT_SSH_COMMAND='ssh -i ~/.ssh/id_fetch' git push origin
+# rosrun rviz rviz -d /path/to/your_config.rviz
