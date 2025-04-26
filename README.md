@@ -6,3 +6,19 @@ This repositiory involves starter code and samples for two classes at the Univer
 * [TECHIN 517: Robotics Lab II](https://sites.google.com/cs.washington.edu/techin517sp22/home)
 
 Labs and other documentation are on the **[wiki](https://github.com/robotic-picker-sp22/fetch-picker/wiki)**.
+
+
+### Lab 25
+The commands for configuring lab 25 environment is in
+
+```
+lab25.sh
+```
+
+
+### lab 26
+Lab 26 may be a bit difficult to implement. The code is in
+
+```
+applications/scripts/lab26_teleop.py
+```
