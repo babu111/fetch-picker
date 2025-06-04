@@ -2,6 +2,8 @@
 
 This repositiory involves starter code and samples for TECHIN517 at the University of Washington, Spring 2025, that aim to program the Fetch mobile manipulator to pick requested items from densely packed shelves. Please only use the code as reference. Do not simply copy the code and use it for your own lab.
 
+⭐ If you find this repo useful, please consider giving it a star. ⭐ 
+
 * [CSE 481 C: Robotics Capstone](https://sites.google.com/cs.washington.edu/cse481csp22/home)
 * [TECHIN 517: Robotics Lab II](https://sites.google.com/cs.washington.edu/techin517sp22/home)
 
