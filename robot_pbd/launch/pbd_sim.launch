@@ -1,0 +1,13 @@
+<launch>
+    <!-- Load robot -->
+    <include file="$(find fetch_gazebo)/launch/fetch_world.launch" />
+
+    <!-- RViz and MoveIt -->
+    <include file="$(find fetch_moveit_config)/launch/demo.launch" />
+
+    <!-- TF -->
+    <param name="use_sim_time" value="true" />
+
+    <!-- PbD Nodes -->
+    <node pkg="robot_pbd" type="pbd_interface.py" name="pbd_interface" output="screen" />
+</launch>
