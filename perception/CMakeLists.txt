@@ -129,6 +129,7 @@ include_directories(
 # )
 add_library(perception_crop src/crop.cpp)
 add_library(perception_downsample src/downsample.cpp)
+add_library(perception_segmentation src/segmentation.cpp)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -162,11 +163,12 @@ target_link_libraries(perception_save_cloud_main
 target_link_libraries(perception_point_cloud_demo
   perception_crop
   perception_downsample
+  perception_segmentation
   ${catkin_LIBRARIES}
 )
 target_link_libraries(perception_crop ${catkin_LIBRARIES})
 target_link_libraries(perception_downsample ${catkin_LIBRARIES})
-
+target_link_libraries(perception_segmentation ${catkin_LIBRARIES})
 #############
 ## Install ##
 #############
